@@ -1,0 +1,1002 @@
+---
+title: "DR_Survival_Outcomes"
+author: "Ravinder Singh"
+date: "2025-08-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+suppressWarnings(suppressMessages(source("C:/Users/u1374012/Documents/Everything/U_PhD/Thesis/fresh_start/tte_causal_inference_training/coding_session_week/functions_library.R")))
+```
+
+# For point estimates.
+Comparing Unadjusted KM Vs. IPTW-Pseudo Vs. AIPTW-Pseudo.
+
+```{r}
+total_simulations <- 1000
+time_points <- c(5, 10, 20)
+total_subjects <- c(500, 2000)
+confounding_types <- c("weak", "strong")
+ps_model_corrections <- c(TRUE, FALSE)
+or_model_corrections <- c(TRUE, FALSE)
+
+# 
+# total_subject <- total_subjects[1]
+# confounding_type <- confounding_types[1]
+# ps_model_correction <- ps_model_corrections[1]
+# or_model_correction <- or_model_corrections[1]
+```
+
+```{r eval=FALSE, include=TRUE}
+point_results_df <- data.frame(total_subjects = numeric(0),
+                         time_points = numeric(0),
+                         confounding_types = character(0),
+                         ps_model_corrections = logical(0),
+                         or_model_corrections = logical(0),
+                         estimator_type = character(0),
+                         survival_prob_treated = numeric(0))
+
+point_summary_df <- data.frame(total_subjects = numeric(0),
+                         time_points = numeric(0),
+                         confounding_types = character(0),
+                         ps_model_corrections = logical(0),
+                         or_model_corrections = logical(0),
+                         estimator_type = character(0),
+                         relative_bias = numeric(0),
+                         relative_sd = numeric(0),
+                         relative_mse = numeric(0),
+                         bias = numeric(0),
+                         sd = numeric(0),
+                         mse = numeric(0))
+
+for (total_subject in total_subjects){
+    for (confounding_type in confounding_types){
+      
+      true_survival_values <- get_true_survival(t = time_points,
+                                                d_level = 1,
+                                                confounding_type = confounding_type)
+      
+      for (ps_model_correction in ps_model_corrections){
+        for (or_model_correction in or_model_corrections) {
+          
+          xx <- test_simulator_point(num_sim = total_simulations,
+                                     num_subject = total_subject,
+                                     time_point = time_points,
+                                     confounding_type = confounding_type,
+                                     ps_model_correct = ps_model_correction,
+                                     or_model_correct = or_model_correction)
+          
+          rows_to_add_E1_t1 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[1], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("unadjusted_km", total_simulations),
+                                          survival_prob_treated = xx$unadjusted_km$t1)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E1_t1$survival_prob_treated |> as.matrix(),
+                                       true_values = true_survival_values[1])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E1_t1$survival_prob_treated |> as.matrix(),
+                                       true_values = true_survival_values[1])
+          
+          summary_rows_to_add_E1_t1 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[1], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("unadjusted_km", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E1_t2 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[2], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("unadjusted_km", total_simulations),
+                                          survival_prob_treated = xx$unadjusted_km$t2)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E1_t2$survival_prob_treated |> as.matrix(),
+                                       true_values = true_survival_values[2])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E1_t2$survival_prob_treated |> as.matrix(),
+                                       true_values = true_survival_values[2])
+          
+          summary_rows_to_add_E1_t2 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[2], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("unadjusted_km", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E1_t3 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[3], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("unadjusted_km", total_simulations),
+                                          survival_prob_treated = xx$unadjusted_km$t3)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E1_t3$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[3])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E1_t3$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[3])
+          
+          summary_rows_to_add_E1_t3 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[3], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("unadjusted_km", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E2_t1 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[1], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("iptw_pseudo_manual", total_simulations),
+                                          survival_prob_treated = xx$iptw_pseudo_manual$t1)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E2_t1$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[1])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E2_t1$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[1])
+          
+          summary_rows_to_add_E2_t1 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[1], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("iptw_pseudo_manual", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E2_t2 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[2], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("iptw_pseudo_manual", total_simulations),
+                                          survival_prob_treated = xx$iptw_pseudo_manual$t2)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E2_t2$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[2])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E2_t2$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[2])
+          
+          summary_rows_to_add_E2_t2 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[2], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("iptw_pseudo_manual", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E2_t3 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[3], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("iptw_pseudo_manual", total_simulations),
+                                          survival_prob_treated = xx$iptw_pseudo_manual$t3)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E2_t3$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[3])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E2_t3$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[3])
+          
+          summary_rows_to_add_E2_t3 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[3], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("iptw_pseudo_manual", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E3_t1 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[1], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("iptw_pseudo_package", total_simulations),
+                                          survival_prob_treated = xx$iptw_pseudo_package$t1)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E3_t1$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[1])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E3_t1$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[1])
+          
+          summary_rows_to_add_E3_t1 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[1], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("iptw_pseudo_package", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E3_t2 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[2], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("iptw_pseudo_package", total_simulations),
+                                          survival_prob_treated = xx$iptw_pseudo_package$t2)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E3_t2$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[2])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E3_t2$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[2])
+          
+          summary_rows_to_add_E3_t2 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[2], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("iptw_pseudo_package", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E3_t3 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[3], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("iptw_pseudo_package", total_simulations),
+                                          survival_prob_treated = xx$iptw_pseudo_package$t3)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E3_t3$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[3])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E3_t3$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[3])
+          
+          summary_rows_to_add_E3_t3 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[3], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("iptw_pseudo_package", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E4_t1 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[1], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_manual", total_simulations),
+                                          survival_prob_treated = xx$aiptw_pseudo_manual$t1)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E4_t1$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[1])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E4_t1$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[1])
+          
+          summary_rows_to_add_E4_t1 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[1], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_manual", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E4_t2 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[2], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_manual", total_simulations),
+                                          survival_prob_treated = xx$aiptw_pseudo_manual$t2)
+         
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E4_t2$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[2])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E4_t2$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[2])
+          
+          summary_rows_to_add_E4_t2 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[2], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_manual", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E4_t3 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[3], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_manual", total_simulations),
+                                          survival_prob_treated = xx$aiptw_pseudo_manual$t3)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E4_t3$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[3])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E4_t3$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[3])
+          
+          summary_rows_to_add_E4_t3 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[3], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_manual", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E5_t1 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[1], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_package", total_simulations),
+                                          survival_prob_treated = xx$aiptw_pseudo_package$t1)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E5_t1$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[1])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E5_t1$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[1])
+          
+          summary_rows_to_add_E5_t1 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[1], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_package", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E5_t2 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[2], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_package", total_simulations),
+                                          survival_prob_treated = xx$aiptw_pseudo_package$t2)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E5_t2$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[2])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E5_t2$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[2])
+          
+          summary_rows_to_add_E5_t2 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[2], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_package", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          rows_to_add_E5_t3 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[3], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_package", total_simulations),
+                                          survival_prob_treated = xx$aiptw_pseudo_package$t3)
+          
+          summary_relative <- calculate_metrics_relative(estimates = rows_to_add_E5_t3$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[3])
+          
+          summary_non_relative <- calculate_metrics_non_relative(estimates = rows_to_add_E5_t3$survival_prob_treated |> as.matrix(),
+                                             true_values = true_survival_values[3])
+          
+          summary_rows_to_add_E5_t3 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[3], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_package", 1),
+                                                  relative_bias = summary_relative$bias,
+                                                  relative_sd = summary_relative$sd,
+                                                  relative_mse = summary_relative$mse,
+                                                  bias = summary_non_relative$bias,
+                                                  sd = summary_non_relative$sd,
+                                                  mse = summary_non_relative$mse)
+          
+          point_results_df <- rbind(point_results_df, 
+                              rows_to_add_E1_t1, rows_to_add_E1_t2, rows_to_add_E1_t3,
+                              rows_to_add_E2_t1, rows_to_add_E2_t2, rows_to_add_E2_t3,
+                              rows_to_add_E3_t1, rows_to_add_E3_t2, rows_to_add_E3_t3,
+                              rows_to_add_E4_t1, rows_to_add_E4_t2, rows_to_add_E4_t3,
+                              rows_to_add_E5_t1, rows_to_add_E5_t2, rows_to_add_E5_t3)
+          
+          point_summary_df <- rbind(point_summary_df, 
+                              summary_rows_to_add_E1_t1, summary_rows_to_add_E1_t2, summary_rows_to_add_E1_t3,
+                              summary_rows_to_add_E2_t1, summary_rows_to_add_E2_t2, summary_rows_to_add_E2_t3,
+                              summary_rows_to_add_E3_t1, summary_rows_to_add_E3_t2, summary_rows_to_add_E3_t3,
+                              summary_rows_to_add_E4_t1, summary_rows_to_add_E4_t2, summary_rows_to_add_E4_t3,
+                              summary_rows_to_add_E5_t1, summary_rows_to_add_E5_t2, summary_rows_to_add_E5_t3)
+        }
+      }
+    }
+  }
+```
+
+```{r eval=FALSE, include=TRUE}
+write.csv(point_results_df, "C:/Users/u1374012/Documents/Everything/U_PhD/Thesis/fresh_start/tte_causal_inference_training/coding_session_week/point_results_df.csv")
+
+write.csv(point_summary_df, "C:/Users/u1374012/Documents/Everything/U_PhD/Thesis/fresh_start/tte_causal_inference_training/coding_session_week/point_summary_df.csv")
+```
+
+```{r}
+point_summary_df <- read.csv("C:/Users/u1374012/Documents/Everything/U_PhD/Thesis/fresh_start/tte_causal_inference_training/coding_session_week/point_summary_df.csv")
+
+df_plot <- point_summary_df %>%
+  mutate(
+    correction_combo = paste0(
+      ifelse(ps_model_corrections, "T", "F"),
+      ifelse(or_model_corrections, "T", "F")
+    ),
+    absolute_relative_bias = abs(relative_bias),
+    confounding_types = ifelse(confounding_types == "weak", "Weak", "Strong"),
+    estimator_type1 = case_when(estimator_type == "unadjusted_km" ~ "Unadjusted KM",
+                                estimator_type %in% c("iptw_pseudo_manual", "iptw_pseudo_package") ~ "IPTW-Pseudo",
+                                estimator_type %in% c("aiptw_pseudo_manual", "aiptw_pseudo_package") ~ "DR-Pseudo"),
+    estimator_type2 = case_when(estimator_type == "unadjusted_km" ~ "Package",
+                                estimator_type == "iptw_pseudo_manual" ~ "Manual",
+                                estimator_type == "iptw_pseudo_package" ~ "Package",
+                                estimator_type == "aiptw_pseudo_manual" ~ "Manual",
+                                estimator_type == "aiptw_pseudo_package" ~ "Package"),
+    estimator_type1 = factor(estimator_type1,
+                             levels = c("Unadjusted KM", "IPTW-Pseudo", "DR-Pseudo"),
+                             labels = c("Unadjusted KM", "IPTW-Pseudo", "DR-Pseudo")),
+    
+    estimator_type2 = factor(estimator_type2,
+                             levels = c("Manual", "Package"),
+                             labels = c("Manual", "Package")))
+
+# Absolute relative bias.
+ggplot(df_plot, aes(
+  x = correction_combo,
+  y = absolute_relative_bias,
+  color = estimator_type1,
+  linetype = estimator_type2,
+  group = interaction(estimator_type1, estimator_type2)
+)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_nested(
+    confounding_types ~ time_points + total_subjects,
+    labeller = labeller(
+      confounding_types = function(x) paste("Confounding =", x),
+      time_points = function(x) paste("Time point =", x),
+      total_subjects = function(x) paste("Sample size =", x)
+    )
+  ) +
+  labs(
+    x = "Model Corrections (PS, OR)",
+    y = "Relative Bias (absolute value)",
+    color = "Estimator",
+    linetype = "Implementation"
+  ) +
+  guides(
+  color = guide_legend(order = 1),
+  linetype = guide_legend(order = 2)
+) +
+  theme_bw() +
+  theme(
+    strip.text = element_text(size = 10),
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+# Relative sd
+ggplot(df_plot, aes(
+  x = correction_combo,
+  y = relative_sd,
+  color = estimator_type1,
+  linetype = estimator_type2,
+  group = interaction(estimator_type1, estimator_type2)
+)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_nested(
+    confounding_types ~ time_points + total_subjects,
+    labeller = labeller(
+      confounding_types = function(x) paste("Confounding =", x),
+      time_points = function(x) paste("Time point =", x),
+      total_subjects = function(x) paste("Sample size =", x)
+    )
+  ) +
+  labs(
+    x = "Model Corrections (PS, OR)",
+    y = "Relative Standard Deviation",
+    color = "Estimator",
+    linetype = "Implementation"
+  ) +
+  guides(
+  color = guide_legend(order = 1),
+  linetype = guide_legend(order = 2)
+) +
+  theme_bw() +
+  theme(
+    strip.text = element_text(size = 10),
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Relative MSE
+ggplot(df_plot, aes(
+  x = correction_combo,
+  y = relative_mse,
+  color = estimator_type1,
+  linetype = estimator_type2,
+  group = interaction(estimator_type1, estimator_type2)
+)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_nested(
+    confounding_types ~ time_points + total_subjects,
+    labeller = labeller(
+      confounding_types = function(x) paste("Confounding =", x),
+      time_points = function(x) paste("Time point =", x),
+      total_subjects = function(x) paste("Sample size =", x)
+    )
+  ) +
+  labs(
+    x = "Model Corrections (PS, OR)",
+    y = "Relative Mean Squared Error",
+    color = "Estimator",
+    linetype = "Implementation"
+  ) +
+  guides(
+  color = guide_legend(order = 1),
+  linetype = guide_legend(order = 2)
+) +
+  theme_bw() +
+  theme(
+    strip.text = element_text(size = 10),
+    axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# For SE estimates.
+Comparing AIPTW-Pseudo (Empirical Vs. Bootstrap).
+
+```{r}
+total_simulations <- 50
+time_points <- c(5, 10, 20)
+total_subjects <- c(500, 2000)
+confounding_types <- c("weak", "strong")
+ps_model_corrections <- c(TRUE, FALSE)
+or_model_corrections <- c(TRUE, FALSE)
+```
+
+```{r eval=FALSE, include=TRUE}
+se_results_df <- data.frame(total_subjects = numeric(0),
+                         time_points = numeric(0),
+                         confounding_types = character(0),
+                         ps_model_corrections = logical(0),
+                         or_model_corrections = logical(0),
+                         estimator_type = character(0),
+                         se_survival_prob_treated = numeric(0))
+
+se_summary_df <- data.frame(total_subjects = numeric(0),
+                         time_points = numeric(0),
+                         confounding_types = character(0),
+                         ps_model_corrections = logical(0),
+                         or_model_corrections = logical(0),
+                         estimator_type = character(0),
+                         relative_bias = numeric(0))
+
+for (total_subject in total_subjects){
+    for (confounding_type in confounding_types){
+      for (ps_model_correction in ps_model_corrections){
+        for (or_model_correction in or_model_corrections) {
+          
+          true_sd_values <- point_summary_df |>
+            filter(total_subjects == total_subject &
+                     confounding_types == confounding_type &
+                     ps_model_corrections == ps_model_correction &
+                     or_model_corrections == or_model_correction &
+                     estimator_type == "aiptw_pseudo_manual") |>
+            pull(sd)
+          
+          yy <- test_simulator_se(num_sim = total_simulations,
+                                  num_subject = total_subject,
+                                  time_point = time_points,
+                                  confounding_type = confounding_type,
+                                  ps_model_correct = ps_model_correction,
+                                  or_model_correct = or_model_correction)
+          
+          rows_to_add_E1_t1 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[1], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_manual_model", total_simulations),
+                                          se_survival_prob_treated = yy$aiptw_pseudo_manual_model$t1)
+          
+          summary <- calculate_metrics_relative(estimates = rows_to_add_E1_t1$se_survival_prob_treated |> as.matrix(),
+                                                true_values = true_sd_values[1])
+          
+          summary_rows_to_add_E1_t1 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[1], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_manual_model", 1),
+                                                  relative_bias = summary$bias)
+          
+          rows_to_add_E1_t2 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[2], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_manual_model", total_simulations),
+                                          se_survival_prob_treated = yy$aiptw_pseudo_manual_model$t2)
+          
+          summary <- calculate_metrics_relative(estimates = rows_to_add_E1_t2$se_survival_prob_treated |> as.matrix(),
+                                                true_values = true_sd_values[2])
+          
+          summary_rows_to_add_E1_t2 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[2], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_manual_model", 1),
+                                                  relative_bias = summary$bias)
+          
+          rows_to_add_E1_t3 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[3], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_manual_model", total_simulations),
+                                          se_survival_prob_treated = yy$aiptw_pseudo_manual_model$t3)
+          
+          summary <- calculate_metrics_relative(estimates = rows_to_add_E1_t3$se_survival_prob_treated |> as.matrix(),
+                                                true_values = true_sd_values[3])
+          
+          summary_rows_to_add_E1_t3 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[3], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_manual_model", 1),
+                                                  relative_bias = summary$bias)
+          
+          rows_to_add_E2_t1 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[1], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_package_model", total_simulations),
+                                          se_survival_prob_treated = yy$aiptw_pseudo_package_model$t1)
+          
+          summary <- calculate_metrics_relative(estimates = rows_to_add_E2_t1$se_survival_prob_treated |> as.matrix(),
+                                                true_values = true_sd_values[1])
+          
+          summary_rows_to_add_E2_t1 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[1], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_package_model", 1),
+                                                  relative_bias = summary$bias)
+          
+          rows_to_add_E2_t2 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[2], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_package_model", total_simulations),
+                                          se_survival_prob_treated = yy$aiptw_pseudo_package_model$t2)
+          
+          summary <- calculate_metrics_relative(estimates = rows_to_add_E2_t2$se_survival_prob_treated |> as.matrix(),
+                                                true_values = true_sd_values[2])
+          
+          summary_rows_to_add_E2_t2 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[2], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_package_model", 1),
+                                                  relative_bias = summary$bias)
+          
+          rows_to_add_E2_t3 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[3], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_package_model", total_simulations),
+                                          se_survival_prob_treated = yy$aiptw_pseudo_package_model$t3)
+          
+          summary <- calculate_metrics_relative(estimates = rows_to_add_E2_t3$se_survival_prob_treated |> as.matrix(),
+                                                true_values = true_sd_values[3])
+          
+          summary_rows_to_add_E2_t3 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[3], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_package_model", 1),
+                                                  relative_bias = summary$bias)
+          
+          rows_to_add_E3_t1 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[1], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_manual_bootstrap", total_simulations),
+                                          se_survival_prob_treated = yy$aiptw_pseudo_manual_bootstrap$t1)
+          
+          summary <- calculate_metrics_relative(estimates = rows_to_add_E3_t1$se_survival_prob_treated |> as.matrix(),
+                                                true_values = true_sd_values[1])
+          
+          summary_rows_to_add_E3_t1 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[1], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_manual_bootstrap", 1),
+                                                  relative_bias = summary$bias)
+          
+          rows_to_add_E3_t2 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[2], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_manual_bootstrap", total_simulations),
+                                          se_survival_prob_treated = yy$aiptw_pseudo_manual_bootstrap$t2)
+          
+          summary <- calculate_metrics_relative(estimates = rows_to_add_E3_t2$se_survival_prob_treated |> as.matrix(),
+                                                true_values = true_sd_values[2])
+          
+          summary_rows_to_add_E3_t2 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[2], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_manual_bootstrap", 1),
+                                                  relative_bias = summary$bias)
+          
+          rows_to_add_E3_t3 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[3], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_manual_bootstrap", total_simulations),
+                                          se_survival_prob_treated = yy$aiptw_pseudo_manual_bootstrap$t3)
+          
+          summary <- calculate_metrics_relative(estimates = rows_to_add_E3_t3$se_survival_prob_treated |> as.matrix(),
+                                                true_values = true_sd_values[3])
+          
+          summary_rows_to_add_E3_t3 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[3], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_manual_bootstrap", 1),
+                                                  relative_bias = summary$bias)
+          
+          rows_to_add_E4_t1 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[1], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_package_bootstrap", total_simulations),
+                                          se_survival_prob_treated = yy$aiptw_pseudo_package_bootstrap$t1)
+          
+          summary <- calculate_metrics_relative(estimates = rows_to_add_E4_t1$se_survival_prob_treated |> as.matrix(),
+                                                true_values = true_sd_values[1])
+          
+          summary_rows_to_add_E4_t1 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[1], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_package_bootstrap", 1),
+                                                  relative_bias = summary$bias)
+          
+          rows_to_add_E4_t2 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[2], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_package_bootstrap", total_simulations),
+                                          se_survival_prob_treated = yy$aiptw_pseudo_package_bootstrap$t2)
+          
+          summary <- calculate_metrics_relative(estimates = rows_to_add_E4_t2$se_survival_prob_treated |> as.matrix(),
+                                                true_values = true_sd_values[2])
+          
+          summary_rows_to_add_E4_t2 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[2], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_package_bootstrap", 1),
+                                                  relative_bias = summary$bias)
+          
+          rows_to_add_E4_t3 <- data.frame(total_subjects = rep(total_subject, total_simulations),
+                                          time_points = rep(time_points[3], total_simulations),
+                                          confounding_types = rep(confounding_type, total_simulations),
+                                          ps_model_corrections = rep(ps_model_correction, total_simulations),
+                                          or_model_corrections = rep(or_model_correction, total_simulations),
+                                          estimator_type = rep("aiptw_pseudo_package_bootstrap", total_simulations),
+                                          se_survival_prob_treated = yy$aiptw_pseudo_package_bootstrap$t3)
+          
+          summary <- calculate_metrics_relative(estimates = rows_to_add_E4_t3$se_survival_prob_treated |> as.matrix(),
+                                                true_values = true_sd_values[3])
+          
+          summary_rows_to_add_E4_t3 <- data.frame(total_subjects = rep(total_subject, 1),
+                                                  time_points = rep(time_points[3], 1),
+                                                  confounding_types = rep(confounding_type, 1),
+                                                  ps_model_corrections = rep(ps_model_correction, 1),
+                                                  or_model_corrections = rep(or_model_correction, 1),
+                                                  estimator_type = rep("aiptw_pseudo_package_bootstrap", 1),
+                                                  relative_bias = summary$bias)
+          
+          
+          
+          se_results_df <- rbind(se_results_df, 
+                              rows_to_add_E1_t1, rows_to_add_E1_t2, rows_to_add_E1_t3,
+                              rows_to_add_E2_t1, rows_to_add_E2_t2, rows_to_add_E2_t3,
+                              rows_to_add_E3_t1, rows_to_add_E3_t2, rows_to_add_E3_t3,
+                              rows_to_add_E4_t1, rows_to_add_E4_t2, rows_to_add_E4_t3)
+          
+          se_summary_df <- rbind(se_summary_df, 
+                              summary_rows_to_add_E1_t1, summary_rows_to_add_E1_t2, summary_rows_to_add_E1_t3,
+                              summary_rows_to_add_E2_t1, summary_rows_to_add_E2_t2, summary_rows_to_add_E2_t3,
+                              summary_rows_to_add_E3_t1, summary_rows_to_add_E3_t2, summary_rows_to_add_E3_t3,
+                              summary_rows_to_add_E4_t1, summary_rows_to_add_E4_t2, summary_rows_to_add_E4_t3)
+          
+          message("✅ Completed: total_subjects = ", total_subject,
+                  ", confounding_type = ", confounding_type,
+                  ", ps_model_corrections = ", ps_model_correction,
+                  ", or_model_corrections = ", or_model_correction)
+        }
+      }
+    }
+  }
+```
+
+```{r eval=FALSE, include=TRUE}
+write.csv(se_results_df, "C:/Users/u1374012/Documents/Everything/U_PhD/Thesis/fresh_start/tte_causal_inference_training/coding_session_week/se_results_df.csv")
+
+write.csv(se_summary_df, "C:/Users/u1374012/Documents/Everything/U_PhD/Thesis/fresh_start/tte_causal_inference_training/coding_session_week/se_summary_df.csv")
+```
+
+```{r}
+se_summary_df <- read.csv("C:/Users/u1374012/Documents/Everything/U_PhD/Thesis/fresh_start/tte_causal_inference_training/coding_session_week/se_summary_df.csv")
+
+df_plot <- se_summary_df %>%
+  mutate(
+    correction_combo = paste0(
+      ifelse(ps_model_corrections, "T", "F"),
+      ifelse(or_model_corrections, "T", "F")
+    ),
+    absolute_relative_bias = abs(relative_bias),
+    confounding_types = ifelse(confounding_types == "weak", "Weak", "Strong"),
+    estimator_type1 = case_when(estimator_type %in% c("aiptw_pseudo_manual_model", "aiptw_pseudo_package_model") ~ "Empirical",
+                                estimator_type %in% c("aiptw_pseudo_manual_bootstrap", "aiptw_pseudo_package_bootstrap") ~ "Bootstrap"),
+    estimator_type2 = case_when(estimator_type == "aiptw_pseudo_manual_model" ~ "Manual",
+                                estimator_type == "aiptw_pseudo_package_model" ~ "Package",
+                                estimator_type == "aiptw_pseudo_manual_bootstrap" ~ "Manual",
+                                estimator_type == "aiptw_pseudo_package_bootstrap" ~ "Package"),
+    estimator_type1 = factor(estimator_type1,
+                             levels = c("Empirical", "Bootstrap"),
+                             labels = c("Empirical", "Bootstrap")),
+    
+    estimator_type2 = factor(estimator_type2,
+                             levels = c("Manual", "Package"),
+                             labels = c("Manual", "Package")))
+
+# Absolute relative bias.
+ggplot(df_plot, aes(
+  x = correction_combo,
+  y = absolute_relative_bias,
+  color = estimator_type1,
+  linetype = estimator_type2,
+  group = interaction(estimator_type1, estimator_type2)
+)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_nested(
+    confounding_types ~ time_points + total_subjects,
+    labeller = labeller(
+      confounding_types = function(x) paste("Confounding =", x),
+      time_points = function(x) paste("Time point =", x),
+      total_subjects = function(x) paste("Sample size =", x)
+    )
+  ) +
+  labs(
+    x = "Model Corrections (PS, OR)",
+    y = "Relative Bias (absolute value)",
+    color = "Variance Method",
+    linetype = "Implementation"
+  ) +
+  guides(
+    color = guide_legend(order = 1),
+    linetype = guide_legend(order = 2)
+  ) +
+  theme_bw() +
+  theme(
+    strip.text = element_text(size = 10),
+    axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+
+```
+
+
+
